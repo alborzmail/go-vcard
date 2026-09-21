@@ -229,7 +229,7 @@ func parseQuoted(s string, quote byte) (value, tail string, err error) {
 	return
 }
 
-var valueParser = strings.NewReplacer("\\\\", "\\", "\\n", "\n", "\\,", ",")
+var valueParser = strings.NewReplacer("\\\\", "\\", "\\n", "\n", "\\,", ",", "\\;", ";")
 
 func parseValue(s string) string {
 	return valueParser.Replace(s)

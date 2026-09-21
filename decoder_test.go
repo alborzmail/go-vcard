@@ -1,6 +1,7 @@
 package vcard
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -174,5 +175,51 @@ func TestParseLine_escaped(t *testing.T) {
 		t.Fatal("Expected no error while parsing line, got:", err)
 	} else if key != expectedKey || field.Value != expectedValue {
 		t.Errorf("parseLine(%q): expected (%q, %q), got (%q, %q)", l, expectedKey, expectedValue, key, field.Value)
+	}
+}
+
+func TestDecoder_escapedRoundTrip(t *testing.T) {
+	s := "BEGIN:VCARD\r\nVERSION:4.0\r\n" +
+		"ADR:;;1 Main St\\; Apt 3;A\\,B;;;\r\n" +
+		"N:a\\;b;c\\,d;;;\r\n" +
+		"NOTE:foo\\;bar\\, baz\r\n" +
+		"END:VCARD\r\n"
+
+	card, err := NewDecoder(strings.NewReader(s)).Decode()
+	if err != nil {
+		t.Fatal("Expected no error when decoding card, got:", err)
+	}
+
+	if name := card.Name(); name.FamilyName != "a;b" || name.GivenName != "c,d" {
+		t.Errorf("Expected name to be (%q, %q), got (%q, %q)", "a;b", "c,d", name.FamilyName, name.GivenName)
+	}
+	if addr := card.Address(); addr.StreetAddress != "1 Main St; Apt 3" || addr.Locality != "A,B" {
+		t.Errorf("Expected address to be (%q, %q), got (%q, %q)", "1 Main St; Apt 3", "A,B", addr.StreetAddress, addr.Locality)
+	}
+	if note := card.Value(FieldNote); note != "foo;bar, baz" {
+		t.Errorf("Expected note to be %q, got %q", "foo;bar, baz", note)
+	}
+
+	var b bytes.Buffer
+	if err := NewEncoder(&b).Encode(card); err != nil {
+		t.Fatal("Expected no error when formatting card, got:", err)
+	}
+
+	formatted := b.String()
+
+	again, err := NewDecoder(&b).Decode()
+	if err != nil {
+		t.Fatal("Expected no error when parsing formatted card, got:", err)
+	}
+	if !reflect.DeepEqual(again, card) {
+		t.Errorf("Invalid parsed card: expected \n%+v\n but got \n%+v", card, again)
+	}
+
+	b.Reset()
+	if err := NewEncoder(&b).Encode(again); err != nil {
+		t.Fatal("Expected no error when formatting card, got:", err)
+	}
+	if b.String() != formatted {
+		t.Errorf("Expected formatted card to be %q, got %q", formatted, b.String())
 	}
 }
