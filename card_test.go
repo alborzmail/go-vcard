@@ -331,8 +331,27 @@ func TestCard_Revision(t *testing.T) {
 	card.SetRevision(expected)
 	if rev, err := card.Revision(); err != nil {
 		t.Fatal("Expected no error when getting revision of a populated card, got:", err)
-	} else if !rev.Equal(rev) {
+	} else if !rev.Equal(expected) {
 		t.Errorf("Expected revision to be %v but got %v", expected, rev)
+	}
+
+	card.SetRevision(expected.In(time.FixedZone("", 3600)))
+	if rev := card.Value(FieldRevision); rev != "19841104T000000Z" {
+		t.Errorf("Expected revision to be written in UTC, got %q", rev)
+	}
+
+	for _, rev := range []string{"19841104T010000+0100", "19841104T010000+01", "19841104T000000", "1984-11-04T01:00:00+01:00"} {
+		card.SetValue(FieldRevision, rev)
+		if got, err := card.Revision(); err != nil {
+			t.Errorf("Expected no error when parsing revision %q, got: %v", rev, err)
+		} else if !got.Equal(expected) {
+			t.Errorf("Expected revision %q to be %v but got %v", rev, expected, got)
+		}
+	}
+
+	card.SetValue(FieldRevision, "yesterday")
+	if _, err := card.Revision(); err == nil {
+		t.Error("Expected an error when parsing revision \"yesterday\"")
 	}
 }
 

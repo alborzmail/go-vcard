@@ -376,12 +376,21 @@ func (c Card) Revision() (time.Time, error) {
 	if rev == "" {
 		return time.Time{}, nil
 	}
-	return time.Parse(timestampLayout, rev)
+	// RFC 6350 allows an offset or no zone at all, and vCard 3.0 writes the
+	// extended form.
+	var err error
+	for _, layout := range []string{"20060102T150405Z0700", "20060102T150405Z07", "20060102T150405", time.RFC3339} {
+		var t time.Time
+		if t, err = time.Parse(layout, rev); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, err
 }
 
 // SetRevision sets revision information about the current card.
 func (c Card) SetRevision(t time.Time) {
-	c.SetValue(FieldRevision, t.Format(timestampLayout))
+	c.SetValue(FieldRevision, t.UTC().Format(timestampLayout))
 }
 
 // A field contains a value and some parameters.
