@@ -246,6 +246,23 @@ func TestCard_Kind(t *testing.T) {
 	}
 }
 
+func TestCard_Members(t *testing.T) {
+	card := make(Card)
+	card.SetKind(KindGroup)
+	card.AddValue(FieldMember, "mailto:subscriber@example.com")
+
+	expected := []string{"urn:uuid:03a0e51f-d1aa-4385-8a53-e29025acd8af", "urn:uuid:b8767877-b4a1-4c70-9acc-505d3819e519"}
+	card.SetMembers(expected)
+	if members := card.Members(); !reflect.DeepEqual(members, expected) {
+		t.Errorf("Expected members %q, got %q", expected, members)
+	}
+
+	card.SetMembers(nil)
+	if _, ok := card[FieldMember]; ok {
+		t.Error("Expected SetMembers(nil) to remove every member")
+	}
+}
+
 func TestCard_FormattedNames(t *testing.T) {
 	card := make(Card)
 

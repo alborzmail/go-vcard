@@ -252,6 +252,20 @@ func (c Card) SetKind(kind Kind) {
 	c.SetValue(FieldKind, string(kind))
 }
 
+// Members returns the URIs of the members of a group, in order.
+func (c Card) Members() []string {
+	return c.Values(FieldMember)
+}
+
+// SetMembers replaces the members of a group with the given URIs. An empty
+// list removes them all.
+func (c Card) SetMembers(members []string) {
+	delete(c, FieldMember)
+	for _, member := range members {
+		c.AddValue(FieldMember, member)
+	}
+}
+
 // FormattedNames returns formatted names of the card. The length of the result
 // is always greater or equal to 1.
 func (c Card) FormattedNames() []*Field {
