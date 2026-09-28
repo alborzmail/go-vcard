@@ -335,3 +335,22 @@ func TestCard_Revision(t *testing.T) {
 		t.Errorf("Expected revision to be %v but got %v", expected, rev)
 	}
 }
+
+func TestCard_Categories(t *testing.T) {
+	card := make(Card)
+	if categories := card.Categories(); len(categories) != 0 {
+		t.Errorf("Expected no categories on an empty card, got %q", categories)
+	}
+
+	card.AddValue(FieldCategories, "work, travel agent")
+	card.AddValue(FieldCategories, "friends,,")
+	expected := []string{"work", "travel agent", "friends"}
+	if categories := card.Categories(); !reflect.DeepEqual(categories, expected) {
+		t.Errorf("Expected categories %q, got %q", expected, categories)
+	}
+
+	card.SetCategories(nil)
+	if _, ok := card[FieldCategories]; ok {
+		t.Error("Expected SetCategories(nil) to remove the property")
+	}
+}

@@ -347,12 +347,26 @@ func (c Card) SetAddress(address *Address) {
 }
 
 // Categories returns category information about the card, also known as "tags".
+// The words of every CATEGORIES property are returned, in order.
 func (c Card) Categories() []string {
-	return strings.Split(c.PreferredValue(FieldCategories), ",")
+	var categories []string
+	for _, f := range c[FieldCategories] {
+		for _, category := range strings.Split(f.Value, ",") {
+			if category = strings.TrimSpace(category); category != "" {
+				categories = append(categories, category)
+			}
+		}
+	}
+	return categories
 }
 
-// SetCategories sets category information about the card.
+// SetCategories sets category information about the card. An empty list
+// removes the property.
 func (c Card) SetCategories(categories []string) {
+	if len(categories) == 0 {
+		delete(c, FieldCategories)
+		return
+	}
 	c.SetValue(FieldCategories, strings.Join(categories, ","))
 }
 
