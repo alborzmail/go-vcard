@@ -335,6 +335,30 @@ func TestCard_Address(t *testing.T) {
 	}
 }
 
+func TestCard_Birthday(t *testing.T) {
+	card := make(Card)
+	if bday, err := card.Birthday(); err != nil || !bday.IsZero() {
+		t.Errorf("Expected a zero birthday and no error on an empty card, got %v, %v", bday, err)
+	}
+
+	expected := time.Date(1996, time.April, 15, 0, 0, 0, 0, time.UTC)
+	for _, bday := range []string{"19960415", "1996-04-15"} {
+		card.SetValue(FieldBirthday, bday)
+		if got, err := card.Birthday(); err != nil {
+			t.Errorf("Expected no error when parsing birthday %q, got: %v", bday, err)
+		} else if !got.Equal(expected) {
+			t.Errorf("Expected birthday %q to be %v but got %v", bday, expected, got)
+		}
+	}
+
+	for _, bday := range []string{"--0415", "1996-04", "circa 1800"} {
+		card.SetValue(FieldBirthday, bday)
+		if _, err := card.Birthday(); err == nil {
+			t.Errorf("Expected an error when parsing birthday %q", bday)
+		}
+	}
+}
+
 func TestCard_Revision(t *testing.T) {
 	card := make(Card)
 

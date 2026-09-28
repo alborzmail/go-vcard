@@ -384,6 +384,21 @@ func (c Card) SetCategories(categories []string) {
 	c.SetValue(FieldCategories, strings.Join(categories, ","))
 }
 
+// Birthday returns the birth date of the card's subject. A birthday that
+// lacks its year, month or day, or is written as text, is an error.
+func (c Card) Birthday() (time.Time, error) {
+	bday := c.Value(FieldBirthday)
+	if bday == "" {
+		return time.Time{}, nil
+	}
+	// vCard 3.0 writes the extended form.
+	t, err := time.Parse("20060102", bday)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", bday)
+	}
+	return t, err
+}
+
 // Revision returns revision information about the current card.
 func (c Card) Revision() (time.Time, error) {
 	rev := c.Value(FieldRevision)
