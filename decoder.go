@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"io"
-	"strconv"
 	"strings"
 )
 
@@ -179,55 +178,38 @@ func parseParams(s string) (params Params, tail string, err error) {
 }
 
 func parseParamValues(s string) (values []string, more bool, tail string, err error) {
-	if s == "" {
-		return
-	}
-	quote := s[0]
-
-	var vs string
-	if quote == '"' {
-		vs, tail, err = parseQuoted(s[1:], quote)
-		if tail == "" || (tail[0] != ';' && tail[0] != ':') {
-			err = errors.New("vcard: malformed quoted parameter value")
-			return
-		}
-		more = tail[0] != ':'
-		tail = tail[1:]
-	} else {
-		i := strings.IndexAny(s, ";:")
-		if i < 0 {
-			vs = s
+	for {
+		var value string
+		if strings.HasPrefix(s, `"`) {
+			i := strings.IndexByte(s[1:], '"')
+			if i < 0 {
+				return nil, false, "", errors.New("vcard: unterminated quoted parameter value")
+			}
+			value, s = s[1:i+1], s[i+2:]
+			if s == "" || !strings.ContainsRune(",;:", rune(s[0])) {
+				return nil, false, "", errors.New("vcard: malformed quoted parameter value")
+			}
 		} else {
-			vs, more, tail = s[:i], s[i] != ':', s[i+1:]
+			i := strings.IndexAny(s, ",;:")
+			if i < 0 {
+				value, s = s, ""
+			} else {
+				value, s = s[:i], s[i:]
+			}
 		}
+		values = append(values, paramParser.Replace(value))
+		if s == "" {
+			return values, false, "", nil
+		}
+		if s[0] != ',' {
+			return values, s[0] == ';', s[1:], nil
+		}
+		s = s[1:]
 	}
-
-	values = strings.Split(vs, ",")
-	for i, value := range values {
-		values[i] = parseValue(value)
-	}
-	return
 }
 
-func parseQuoted(s string, quote byte) (value, tail string, err error) {
-	tail = s
-	var buf []rune
-	for tail != "" {
-		if tail[0] == quote {
-			tail = tail[1:]
-			break
-		}
-
-		var r rune
-		r, _, tail, err = strconv.UnquoteChar(tail, quote)
-		if err != nil {
-			return
-		}
-		buf = append(buf, r)
-	}
-	value = string(buf)
-	return
-}
+// RFC 6868 parameter escaping is separate from property TEXT escaping.
+var paramParser = strings.NewReplacer("^^", "^", "^n", "\n", "^'", "\"")
 
 var valueParser = strings.NewReplacer("\\\\", "\\", "\\n", "\n", "\\,", ",", "\\;", ";")
 
