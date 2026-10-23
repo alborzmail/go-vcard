@@ -23,7 +23,7 @@ VERSION:4.0
 N:Bloggs;Joe;;;
 FN:Joe Bloggs
 EMAIL;TYPE=home;PREF=1:me@joebloggs.com
-TEL;TYPE="cell,home";PREF=1:tel:+44 20 1234 5678
+TEL;TYPE=cell,home;PREF=1:tel:+44 20 1234 5678
 ADR;TYPE=home;PREF=1:;;1 Trafalgar Square;London;;WC2N;United Kingdom
 URL;TYPE=home;PREF=1:http://joebloggs.com
 IMPP;TYPE=home;PREF=1:skype:joe.bloggs
